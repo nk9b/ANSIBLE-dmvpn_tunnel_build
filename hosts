@@ -1,0 +1,4 @@
+[lab]
+csr1    ansible_host=172.16.1.10   ansible_network_os=ios  ansible_ssh_user=cisco  ansible_ssh_pass=cisco  provision_file="csr1.provision.j2"
+csr2    ansible_host=172.16.1.11   ansible_network_os=ios  ansible_ssh_user=cisco  ansible_ssh_pass=cisco  provision_file="csr2.provision.j2"
+csr3    ansible_host=172.16.1.12   ansible_network_os=ios  ansible_ssh_user=cisco  ansible_ssh_pass=cisco  provision_file="csr3.provision.j2"

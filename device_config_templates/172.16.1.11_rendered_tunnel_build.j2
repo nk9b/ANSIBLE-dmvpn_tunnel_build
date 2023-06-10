@@ -1,0 +1,62 @@
+interface Tunnel11
+ description MPLS DMVPN Tunnel 11
+ bandwidth 10000
+ ip address 192.168.11.2 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 3000
+ nhrp group Spoke-10M-METRO-E
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+ tunnel source Loopback0
+ tunnel mode gre multipoint
+ shutdown
+interface Tunnel21
+ description MPLS DMVPN Tunnel 21
+ bandwidth 10000
+ ip address 192.168.21.2 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 2000
+ nhrp group Spoke-10M-METRO-E
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+ tunnel source Loopback0
+ tunnel mode gre multipoint
+ shutdown
+interface Tunnel31
+ description INET DMVPN Tunnel 31
+ bandwidth 10000
+ bandwidth receive 50000
+ ip address 192.168.31.2 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 1000
+ nhrp group Spoke-50M-DIA
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+ tunnel source Loopback0
+ tunnel mode gre multipoint
+ shutdown
+end

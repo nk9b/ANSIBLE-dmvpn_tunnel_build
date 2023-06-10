@@ -1,0 +1,20 @@
+---
+- hosts: [lab]
+  gather_facts: no
+  connection: ansible.netcommon.network_cli
+  serial: 25
+  vars:
+    ansible_network_cli_ssh_type: paramiko
+    ansible_command_timeout: 60
+
+  tasks:
+
+  - name: IOS COMMAND - remove new DMVPN tunnels created by dmvpn_tunnel_build Play
+    cisco.ios.ios_command:
+      commands:
+        - "conf t"
+        - "no int tu11"
+        - "no int tu21"
+        - "no int tu31"
+        - end
+        - "wr mem"

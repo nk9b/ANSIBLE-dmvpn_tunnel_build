@@ -1,0 +1,31 @@
+hostname csr2
+aaa new-model
+aaa authentication login default local enable
+aaa authorization config-commands
+aaa authorization exec default local 
+aaa authorization commands 15 default local
+no ip domain lookup
+username cisco privilege 15 secret cisco
+interface Loopback0
+ description DMVPN Tunnel source interface
+ ip address 192.168.255.2 255.255.255.255
+interface Tunnel10
+ description MPLS DMVPN Tunnel 10
+ bandwidth 10000
+ ip address 192.168.10.2 255.255.255.0
+ nhrp group Spoke-10M-METRO-E
+ tunnel source Loopback0
+interface Tunnel20
+ description MPLS DMVPN Tunnel 20
+ bandwidth 10000
+ ip address 192.168.20.2 255.255.255.0
+ nhrp group Spoke-10M-METRO-E
+ tunnel source Loopback0
+interface Tunnel30
+ description MPLS DMVPN Tunnel 30
+ bandwidth 10000
+ bandwidth receive 50000
+ ip address 192.168.30.2 255.255.255.0
+ nhrp group Spoke-50M-DIA
+ tunnel source Loopback0
+end

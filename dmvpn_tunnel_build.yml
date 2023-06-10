@@ -1,0 +1,186 @@
+---
+- hosts: [lab]
+  gather_facts: no
+  connection: ansible.netcommon.network_cli
+  serial: 25
+  vars:
+    ansible_network_cli_ssh_type: paramiko
+    ansible_command_timeout: 60
+    regex_tunnel_source_if: '(?<=\().+\w(?=\))'
+    regex_nhrp_group: '(?<=group\s).+\w'
+    regex_bw: '(?<=\sBW\s)\d+'
+    regex_bw_rx: '(?<=RxBW\s)\d+'
+
+  tasks:
+
+  - name: INCLUDE VARS - import tunnel vars
+    ansible.builtin.include_vars:
+      file: ./tunnel_vars.yml
+      name: tunnel_vars
+
+  - name: IOS L3 RESOURCE MODULE - gather tunnel L3 interface Facts
+    cisco.ios.ios_l3_interfaces:
+      state: gathered
+    register: interface_facts
+
+  - name: PLAY WALKTHROUGH TASK 1
+    debug:
+      msg: "{{ interface_facts }}"
+
+  - name: SET FACT - currently defined tunnel interfaces
+    ansible.builtin.set_fact:
+      tunnels: "{{ interface_facts.gathered | selectattr('name', 'contains', 'Tunnel') }}"
+
+  - name: PLAY WALKTHROUGH TASK 2
+    debug:
+      msg: "{{ tunnels }}"
+
+  - name: SET FACT - create current tunnel interface and IP mappings 
+    ansible.builtin.set_fact:
+        tunnel_if: "{{ (tunnel_if | default([])) + [item.name] }}"
+        tunnel_address: "{{ (tunnel_address | default([])) + [item.ipv4 | map(attribute='address') | ansible.utils.ipv4('address')] }}"
+    loop: "{{ tunnels }}"
+
+  - name: PLAY WALKTHROUGH TASK 3
+    debug:
+      msg: |-
+          "{{ tunnel_if }}"
+          "{{ tunnel_address}}"
+
+  # - name: INCLUDE ROLE - gather current tunnel parameters 
+  #   include_tasks: roles/IOS_show_dmvpn_interfaces/tasks/main.yml
+  #   loop: "{{ tunnel_if }}"
+  #   loop_control: 
+  #     loop_var: tunnel_if_pattern
+  
+  #- meta: end_play
+
+  #####
+
+  - name: IOS COMMAND - interface bandwidth
+    cisco.ios.ios_command:
+      commands: show interfaces {{ item }} | inc BW
+    loop: "{{ tunnel_if }}"
+    register: bw
+
+  - name: PLAY WALKTHROUGH TASK 4
+    debug:
+      msg: "{{ bw }}"
+
+  - name: SET FACT - interface bandwidth
+    ansible.builtin.set_fact:
+      bandwidth: "{{ (bandwidth | default([])) + [item.stdout_lines] | map('regex_search',regex_bw) | list }}"
+    loop: "{{ bw.results }}"
+
+  - name: PLAY WALKTHROUGH TASK 5
+    debug:
+      msg: "{{ bandwidth }}"
+
+  - name: IOS COMMAND - interface receive bandwidth
+    cisco.ios.ios_command:
+      commands: show interfaces {{ item }} | inc RxBW
+    loop: "{{ tunnel_if }}"
+    register: bw_rx
+
+  - name: PLAY WALKTHROUGH TASK 6
+    debug:
+      msg: "{{ bw_rx }}"
+
+  - name: SET FACT - interface receive bandwidth
+    ansible.builtin.set_fact:
+      bandwidth_rx: "{{ (bandwidth_rx | default([])) + [item.stdout_lines] | map('regex_search',regex_bw_rx) | list }}"
+    loop: "{{ bw_rx.results }}"
+
+  - name: PLAY WALKTHROUGH TASK 7
+    debug:
+      msg: "{{ bandwidth_rx }}"
+
+  - name: IOS COMMAND - NHRP group name
+    cisco.ios.ios_command:
+      commands: show running-config interface {{ item }} | inc nhrp group 
+    loop: "{{ tunnel_if }}"
+    register: nh_grp
+
+  - name: PLAY WALKTHROUGH TASK 8
+    debug:
+      msg: "{{ nh_grp }}"
+
+  - name: SET FACT - NHRP group name
+    ansible.builtin.set_fact:
+      nhrp_group: "{{ (nhrp_group | default([])) + [item.stdout_lines] | map('regex_search',regex_nhrp_group) | list }}"
+    loop: "{{ nh_grp.results }}"
+
+  - name: PLAY WALKTHROUGH TASK 9
+    debug:
+      msg: "{{ nhrp_group }}"
+
+  - name: IOS COMMAND - tunnel source interface
+    cisco.ios.ios_command:
+      commands: show interfaces {{ item }} | inc Tunnel source 
+    loop: "{{ tunnel_if }}"
+    register: ts_if
+
+  - name: PLAY WALKTHROUGH TASK 10
+    debug:
+      msg: "{{ ts_if }}"
+
+  - name: SET FACT - tunnel source interface
+    ansible.builtin.set_fact:
+      tunnel_source_if: "{{ (tunnel_source_if | default([])) + [item.stdout_lines] | map('regex_search',regex_tunnel_source_if) | list }}"
+    loop: "{{ ts_if.results }}"
+
+  - name: PLAY WALKTHROUGH TASK 11
+    debug:
+      msg: "{{ tunnel_source_if }}"
+
+  #####
+
+  - name: LIST ALL ROLE OUTPUT FOR DEVICE AND BEFORE COMBINE
+    debug:
+      msg: "{{ ansible_host }} -- {{ tunnel_if }} {{ tunnel_address }} {{ bandwidth }} {{ bandwidth_rx }} {{ nhrp_group }} {{ tunnel_source_if }}"
+
+  - name: SET FACT - combine current tunnel parameter Facts into operational state Fact
+    ansible.builtin.set_fact:
+      legacy_tunnel_def: "{{ legacy_tunnel_def | default([]) + [dict(name=item[0], ip=item[1], \
+                             bandwidth=item[2], bandwidth_rx=item[3], nhrp_group=item[4], tunnel_source_if=item[5])] }}"
+    loop: "{{ tunnel_if | zip(tunnel_address, bandwidth, bandwidth_rx, nhrp_group, tunnel_source_if) | list }}"
+
+  - name: PLAY WALKTHROUGH TASK 12
+    debug:
+      msg: "{{ legacy_tunnel_def  }}"
+
+  - name: SET FACT - determine new tunnel IP address from the included tunnel vars file
+    ansible.builtin.set_fact:
+      ip_mapping: "{{ ip_mapping | default([]) + tunnel_vars[item.name] | dict2items | selectattr('key', 'equalto', item.ip[0]) }}"
+    loop: "{{ legacy_tunnel_def }}"
+    when: tunnel_vars[item.name] is defined
+
+  - name: PLAY WALKTHROUGH TASK 13
+    debug:
+      msg: "{{ ip_mapping }}"
+  
+  - name: SET FACT - build new tunnel parameter Fact
+    ansible.builtin.set_fact:
+      new_tunnel_params: "{{ new_tunnel_params | default([]) + [dict(tunnel=item[0], new_ip=item[1], \
+                          bandwidth=item[2],bandwidth_rx=item[3], nhrp_group=item[4], tunnel_source_if=item[5])] }}"
+    loop: "{{ tunnel_if | zip(ip_mapping | map(attribute='value'), bandwidth, bandwidth_rx, nhrp_group, tunnel_source_if) | list }}"
+
+  - name: DEBUG HOST AND TUNNEL SOURCE INTERFACES
+    debug:
+      msg: "{{ ansible_host }}  --  {{ tunnel_source_if }}"
+
+  - name: DEBUG OUTPUT FOR NEW TUNNEL PARAMETER FACT
+    debug:
+      msg: "{{ new_tunnel_params }}"
+
+  - name: RENDER J2 TEMPLATE - build final tunnel configuration pushed to device
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    loop: 
+      - { src: './tunnel_build_template.j2', dest: './device_config_templates/{{ ansible_host }}_rendered_tunnel_build.j2' }
+
+  - name: render a Jinja2 template onto an IOS device
+    cisco.ios.ios_config:
+      backup: no
+      src: ./device_config_templates/{{ ansible_host }}_rendered_tunnel_build.j2

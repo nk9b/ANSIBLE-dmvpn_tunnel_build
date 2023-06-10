@@ -1,0 +1,132 @@
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel10' %}
+interface Tunnel11
+ description MPLS DMVPN Tunnel 11
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel10' %}
+{% if tun_config.bandwidth_rx is string %}
+ bandwidth {{ tun_config.bandwidth }}
+ bandwidth receive {{ tun_config.bandwidth_rx }}
+{% else %}
+ bandwidth {{ tun_config.bandwidth }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel10' %}
+ ip address {{ tun_config.new_ip }} 255.255.255.0
+{% endif %}
+{% endfor %}
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 3000
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel10' %}
+ nhrp group {{ tun_config.nhrp_group }}
+{% endif %}
+{% endfor %}
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel10' %}
+ tunnel source {{ tun_config.tunnel_source_if }}
+{% endif %}
+{% endfor %}
+ tunnel mode gre multipoint
+ shutdown
+{% endif %}
+{% if tun_config.tunnel == 'Tunnel20' %}
+interface Tunnel21
+ description MPLS DMVPN Tunnel 21
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel20' %}
+{% if tun_config.bandwidth_rx is string %}
+ bandwidth {{ tun_config.bandwidth }}
+ bandwidth receive {{ tun_config.bandwidth_rx }}
+{% else %}
+ bandwidth {{ tun_config.bandwidth }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel20' %}
+ ip address {{ tun_config.new_ip }} 255.255.255.0
+{% endif %}
+{% endfor %}
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 2000
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel20' %}
+ nhrp group {{ tun_config.nhrp_group }}
+{% endif %}
+{% endfor %}
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel20' %}
+ tunnel source {{ tun_config.tunnel_source_if }}
+{% endif %}
+{% endfor %}
+ tunnel mode gre multipoint
+ shutdown
+{% endif %}
+{% if tun_config.tunnel == 'Tunnel30' %}
+interface Tunnel31
+ description INET DMVPN Tunnel 31
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel30' %}
+{% if tun_config.bandwidth_rx is string %}
+ bandwidth {{ tun_config.bandwidth }}
+ bandwidth receive {{ tun_config.bandwidth_rx }}
+{% else %}
+ bandwidth {{ tun_config.bandwidth }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel30' %}
+ ip address {{ tun_config.new_ip }} 255.255.255.0
+{% endif %}
+{% endfor %}
+ no ip redirects
+ ip mtu 1400
+ ip nbar protocol-discovery
+ ip pim dr-priority 0
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip tcp adjust-mss 1360
+ load-interval 30
+ delay 1000
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel30' %}
+ nhrp group {{ tun_config.nhrp_group }}
+{% endif %}
+{% endfor %}
+ if-state nhrp
+ cts sgt inline
+ qos pre-classify
+{% for tun_config in new_tunnel_params %}
+{% if tun_config.tunnel == 'Tunnel30' %}
+ tunnel source {{ tun_config.tunnel_source_if }}
+{% endif %}
+{% endfor %}
+ tunnel mode gre multipoint
+ shutdown
+{% endif %}
+{% endfor %}
+end
